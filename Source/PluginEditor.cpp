@@ -28,6 +28,7 @@ TestProjectWithCodexAudioProcessorEditor::TestProjectWithCodexAudioProcessorEdit
     qLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (qLabel);
 
+
     // Drive slider
     driveSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
     driveSlider.setRange (0.0f, 20.0f, 0.01f);
