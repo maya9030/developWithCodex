@@ -29,5 +29,10 @@ private:
     // access the processor object that created it.
     TestProjectWithCodexAudioProcessor& audioProcessor;
 
+    // UI components
+    juce::Slider qSlider;
+    juce::Slider driveSlider;
+    juce::TabbedComponent modeTabs { juce::TabbedButtonBar::TabsAtTop };
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TestProjectWithCodexAudioProcessorEditor)
 };
