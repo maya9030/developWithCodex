@@ -20,14 +20,16 @@ TestProjectWithCodexAudioProcessorEditor::TestProjectWithCodexAudioProcessorEdit
     // Q slider
     qSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
     qSlider.setRange (0.0f, 1.0f, 0.001f);
+    qSlider.onValueChange = [this] { audioProcessor.setQ ((float) qSlider.getValue()); };
     qSlider.setValue (0.0f);
     qSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 60, 20);
     addAndMakeVisible (qSlider);
 
     // Drive slider
     driveSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
-    driveSlider.setRange (1.0f, 20.0f, 0.01f);
-    driveSlider.setValue (1.0f);
+    driveSlider.setRange (0.0f, 20.0f, 0.01f);
+    driveSlider.onValueChange = [this] { audioProcessor.setDrive ((float) driveSlider.getValue()); };
+    driveSlider.setValue (0.0f);
     driveSlider.setTextBoxStyle (juce::Slider::TextBoxBelow, false, 60, 20);
     addAndMakeVisible (driveSlider);
 
