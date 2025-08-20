@@ -28,7 +28,6 @@ TestProjectWithCodexAudioProcessorEditor::TestProjectWithCodexAudioProcessorEdit
     qLabel.setJustificationType (juce::Justification::centred);
     addAndMakeVisible (qLabel);
 
-
     // Drive slider
     driveSlider.setSliderStyle (juce::Slider::RotaryHorizontalVerticalDrag);
     driveSlider.setRange (0.0f, 20.0f, 0.01f);
@@ -92,3 +91,4 @@ void TestProjectWithCodexAudioProcessorEditor::timerCallback()
     auto freq = audioProcessor.getCurrentF0();
     f0Label.setText ("F0: " + juce::String (freq, 2) + " Hz", juce::dontSendNotification);
 }
+

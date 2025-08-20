@@ -103,7 +103,7 @@ void TestProjectWithCodexAudioProcessor::prepareToPlay (double sampleRate, int s
     ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF12);
     ladder.reset();
 
-    oversampler = std::make_unique<juce::dsp::Oversampling<float>> (spec.numChannels, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
+    oversampler = std::make_unique<juce::dsp::Oversampling<float>> (spec.numChannels, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
     oversampler->initProcessing (static_cast<size_t> (samplesPerBlock));
 
     cutoffSmooth.reset (sampleRate, 0.05);
@@ -212,7 +212,6 @@ float TestProjectWithCodexAudioProcessor::getCurrentF0() const
 {
     return currentF0.load();
 }
-
 //==============================================================================
 bool TestProjectWithCodexAudioProcessor::hasEditor() const
 {
