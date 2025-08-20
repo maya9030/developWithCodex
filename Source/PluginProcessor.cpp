@@ -8,6 +8,7 @@
 
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
+#include <cmath>
 
 //==============================================================================
 TestProjectWithCodexAudioProcessor::TestProjectWithCodexAudioProcessor()
@@ -93,8 +94,26 @@ void TestProjectWithCodexAudioProcessor::changeProgramName (int index, const juc
 //==============================================================================
 void TestProjectWithCodexAudioProcessor::prepareToPlay (double sampleRate, int samplesPerBlock)
 {
-    // Use this method as the place to do any pre-playback
-    // initialisation that you need..
+    juce::dsp::ProcessSpec spec;
+    spec.sampleRate = sampleRate;
+    spec.maximumBlockSize = static_cast<juce::uint32> (samplesPerBlock);
+    spec.numChannels = static_cast<juce::uint32> (getTotalNumOutputChannels());
+
+    ladder.prepare (spec);
+    ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF12);
+    ladder.reset();
+
+    oversampler = std::make_unique<juce::dsp::Oversampling<float>> (spec.numChannels, 1, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
+    oversampler->initProcessing (static_cast<size_t> (samplesPerBlock));
+
+    cutoffSmooth.reset (sampleRate, 0.05);
+    qSmooth.reset (sampleRate, 0.05);
+    driveSmooth.reset (sampleRate, 0.05);
+    cutoffSmooth.setCurrentAndTargetValue (0.0f);
+    qSmooth.setCurrentAndTargetValue (0.0f);
+    driveSmooth.setCurrentAndTargetValue (0.0f);
+
+    pitchTracker.setSampleRate (static_cast<float> (sampleRate));
 }
 
 void TestProjectWithCodexAudioProcessor::releaseResources()
@@ -132,30 +151,66 @@ bool TestProjectWithCodexAudioProcessor::isBusesLayoutSupported (const BusesLayo
 void TestProjectWithCodexAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, juce::MidiBuffer& midiMessages)
 {
     juce::ScopedNoDenormals noDenormals;
-    auto totalNumInputChannels  = getTotalNumInputChannels();
-    auto totalNumOutputChannels = getTotalNumOutputChannels();
 
-    // In case we have more outputs than inputs, this code clears any output
-    // channels that didn't contain input data, (because these aren't
-    // guaranteed to be empty - they may contain garbage).
-    // This is here to avoid people getting screaming feedback
-    // when they first compile a plugin, but obviously you don't need to keep
-    // this code if your algorithm always overwrites all the output channels.
-    for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
-        buffer.clear (i, 0, buffer.getNumSamples());
+    // Pitch detection from first channel
+    float f0 = pitchTracker.getPitch (buffer.getReadPointer (0), buffer.getNumSamples());
+    if (f0 > 0.0f)
+        cutoffSmooth.setTargetValue (f0);
+    else
+        cutoffSmooth.setTargetValue (0.0f);
 
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-    for (int channel = 0; channel < totalNumInputChannels; ++channel)
+    currentF0 = f0 > 0.0f ? f0 : 0.0f;
+
+    qSmooth.setTargetValue (q.load());
+    driveSmooth.setTargetValue (drive.load());
+
+    juce::dsp::AudioBlock<float> block (buffer);
+    auto oversampledBlock = oversampler->processSamplesUp (block);
+
+    auto numSamples = oversampledBlock.getNumSamples();
+    auto numChannels = oversampledBlock.getNumChannels();
+
+    for (size_t i = 0; i < numSamples; ++i)
     {
-        auto* channelData = buffer.getWritePointer (channel);
+        auto cutoff = cutoffSmooth.getNextValue();
+        auto qVal = qSmooth.getNextValue();
+        auto driveVal = driveSmooth.getNextValue();
+        ladder.setCutoffFrequencyHz (cutoff);
+        ladder.setResonance (qVal);
+        float dB = std::pow (10.0f, driveVal / 10.0f);
+        ladder.setDrive (dB);
 
-        // ..do something to the data...
+        for (size_t ch = 0; ch < numChannels; ++ch)
+        {
+            auto* channelData = oversampledBlock.getChannelPointer (ch);
+            channelData[i] = ladder.processSample ((int) ch, channelData[i]);
+        }
     }
+
+    oversampler->processSamplesDown (block);
+}
+
+void TestProjectWithCodexAudioProcessor::setQ (float newQ)
+{
+    q = newQ;
+}
+
+void TestProjectWithCodexAudioProcessor::setDrive (float newDrive)
+{
+    drive = newDrive;
+}
+
+void TestProjectWithCodexAudioProcessor::setMode (int modeIndex)
+{
+    if (modeIndex == 0)
+        ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF12);
+    else
+        ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF24);
+}
+
+float TestProjectWithCodexAudioProcessor::getCurrentF0() const
+{
+    return currentF0.load();
 }
 
 //==============================================================================
