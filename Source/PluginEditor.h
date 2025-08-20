@@ -14,7 +14,7 @@
 //==============================================================================
 /**
 */
-class TestProjectWithCodexAudioProcessorEditor  : public juce::AudioProcessorEditor
+class TestProjectWithCodexAudioProcessorEditor  : public juce::AudioProcessorEditor, private juce::Timer
 {
 public:
     TestProjectWithCodexAudioProcessorEditor (TestProjectWithCodexAudioProcessor&);
@@ -23,6 +23,8 @@ public:
     //==============================================================================
     void paint (juce::Graphics&) override;
     void resized() override;
+
+    void timerCallback() override;
 
 private:
     // This reference is provided as a quick way for your editor to
@@ -33,6 +35,9 @@ private:
     juce::Slider qSlider;
     juce::Slider driveSlider;
     juce::TabbedComponent modeTabs { juce::TabbedButtonBar::TabsAtTop };
+    juce::Label qLabel;
+    juce::Label driveLabel;
+    juce::Label f0Label;
 
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TestProjectWithCodexAudioProcessorEditor)
 };

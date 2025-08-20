@@ -103,6 +103,16 @@ void TestProjectWithCodexAudioProcessor::prepareToPlay (double sampleRate, int s
     ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF12);
     ladder.reset();
 
+    oversampler = std::make_unique<juce::dsp::Oversampling<float>> (spec.numChannels, 2, juce::dsp::Oversampling<float>::filterHalfBandPolyphaseIIR);
+    oversampler->initProcessing (static_cast<size_t> (samplesPerBlock));
+
+    cutoffSmooth.reset (sampleRate, 0.05);
+    qSmooth.reset (sampleRate, 0.05);
+    driveSmooth.reset (sampleRate, 0.05);
+    cutoffSmooth.setCurrentAndTargetValue (0.0f);
+    qSmooth.setCurrentAndTargetValue (0.0f);
+    driveSmooth.setCurrentAndTargetValue (0.0f);
+
     pitchTracker.setSampleRate (static_cast<float> (sampleRate));
 }
 
@@ -145,15 +155,39 @@ void TestProjectWithCodexAudioProcessor::processBlock (juce::AudioBuffer<float>&
     // Pitch detection from first channel
     float f0 = pitchTracker.getPitch (buffer.getReadPointer (0), buffer.getNumSamples());
     if (f0 > 0.0f)
-        ladder.setCutoffFrequencyHz (f0);
+        cutoffSmooth.setTargetValue (f0);
+    else
+        cutoffSmooth.setTargetValue (0.0f);
 
-    ladder.setResonance (q.load());
-    float dB = std::pow (10.0f, drive.load() / 10.0f);
-    ladder.setDrive (dB);
+    currentF0 = f0 > 0.0f ? f0 : 0.0f;
+
+    qSmooth.setTargetValue (q.load());
+    driveSmooth.setTargetValue (drive.load());
 
     juce::dsp::AudioBlock<float> block (buffer);
-    juce::dsp::ProcessContextReplacing<float> context (block);
-    ladder.process (context);
+    auto oversampledBlock = oversampler->processSamplesUp (block);
+
+    auto numSamples = oversampledBlock.getNumSamples();
+    auto numChannels = oversampledBlock.getNumChannels();
+
+    for (size_t i = 0; i < numSamples; ++i)
+    {
+        auto cutoff = cutoffSmooth.getNextValue();
+        auto qVal = qSmooth.getNextValue();
+        auto driveVal = driveSmooth.getNextValue();
+        ladder.setCutoffFrequencyHz (cutoff);
+        ladder.setResonance (qVal);
+        float dB = std::pow (10.0f, driveVal / 10.0f);
+        ladder.setDrive (dB);
+
+        for (size_t ch = 0; ch < numChannels; ++ch)
+        {
+            auto* channelData = oversampledBlock.getChannelPointer (ch);
+            channelData[i] = ladder.processSample ((int) ch, channelData[i]);
+        }
+    }
+
+    oversampler->processSamplesDown (block);
 }
 
 void TestProjectWithCodexAudioProcessor::setQ (float newQ)
@@ -164,6 +198,19 @@ void TestProjectWithCodexAudioProcessor::setQ (float newQ)
 void TestProjectWithCodexAudioProcessor::setDrive (float newDrive)
 {
     drive = newDrive;
+}
+
+void TestProjectWithCodexAudioProcessor::setMode (int modeIndex)
+{
+    if (modeIndex == 0)
+        ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF12);
+    else
+        ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF24);
+}
+
+float TestProjectWithCodexAudioProcessor::getCurrentF0() const
+{
+    return currentF0.load();
 }
 
 //==============================================================================
