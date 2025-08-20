@@ -38,6 +38,13 @@ public:
 
     float getCurrentF0() const;
 
+    // Parameter setters used by the editor
+    void setQ (float newQ);
+    void setDrive (float newDrive);
+    void setMode (int modeIndex);
+
+    float getCurrentF0() const;
+
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
     bool hasEditor() const override;

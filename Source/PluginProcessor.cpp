@@ -212,7 +212,6 @@ float TestProjectWithCodexAudioProcessor::getCurrentF0() const
 {
     return currentF0.load();
 }
-
 //==============================================================================
 bool TestProjectWithCodexAudioProcessor::hasEditor() const
 {

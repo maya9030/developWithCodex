@@ -91,3 +91,4 @@ void TestProjectWithCodexAudioProcessorEditor::timerCallback()
     auto freq = audioProcessor.getCurrentF0();
     f0Label.setText ("F0: " + juce::String (freq, 2) + " Hz", juce::dontSendNotification);
 }
+
