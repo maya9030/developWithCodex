@@ -9,6 +9,7 @@
 #pragma once
 
 #include <JuceHeader.h>
+#include "MPMtracker.h"
 
 //==============================================================================
 /**
@@ -29,6 +30,13 @@ public:
    #endif
 
     void processBlock (juce::AudioBuffer<float>&, juce::MidiBuffer&) override;
+
+    // Parameter setters used by the editor
+    void setQ (float newQ);
+    void setDrive (float newDrive);
+    void setMode (int modeIndex);
+
+    float getCurrentF0() const;
 
     //==============================================================================
     juce::AudioProcessorEditor* createEditor() override;
@@ -55,5 +63,15 @@ public:
 
 private:
     //==============================================================================
+    juce::dsp::LadderFilter<float> ladder;
+    MPMtracker pitchTracker;
+    std::atomic<float> q { 0.0f };
+    std::atomic<float> drive { 0.0f };
+    std::atomic<float> currentF0 { 0.0f };
+    juce::LinearSmoothedValue<float> cutoffSmooth;
+    juce::LinearSmoothedValue<float> qSmooth;
+    juce::LinearSmoothedValue<float> driveSmooth;
+    std::unique_ptr<juce::dsp::Oversampling<float>> oversampler;
+
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (TestProjectWithCodexAudioProcessor)
 };
