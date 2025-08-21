@@ -12,9 +12,9 @@
 #include "PluginProcessor.h"
 
 //==============================================================================
-/**
-*/
+
 class TestProjectWithCodexAudioProcessorEditor  : public juce::AudioProcessorEditor, private juce::Timer
+
 {
 public:
     TestProjectWithCodexAudioProcessorEditor (TestProjectWithCodexAudioProcessor&);

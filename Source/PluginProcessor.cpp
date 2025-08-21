@@ -11,6 +11,7 @@
 #include <cmath>
 #include <vector>
 
+
 //==============================================================================
 TestProjectWithCodexAudioProcessor::TestProjectWithCodexAudioProcessor()
 #ifndef JucePlugin_PreferredChannelConfigurations
@@ -119,6 +120,7 @@ void TestProjectWithCodexAudioProcessor::prepareToPlay (double sampleRate, int s
 
 void TestProjectWithCodexAudioProcessor::releaseResources()
 {
+
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
@@ -216,6 +218,29 @@ float TestProjectWithCodexAudioProcessor::getCurrentF0() const
     return currentF0.load();
 }
 
+
+void TestProjectWithCodexAudioProcessor::setQ (float newQ)
+{
+    q = newQ;
+}
+
+void TestProjectWithCodexAudioProcessor::setDrive (float newDrive)
+{
+    drive = newDrive;
+}
+
+void TestProjectWithCodexAudioProcessor::setMode (int modeIndex)
+{
+    if (modeIndex == 0)
+        ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF12);
+    else
+        ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF24);
+}
+
+float TestProjectWithCodexAudioProcessor::getCurrentF0() const
+{
+    return currentF0.load();
+}
 //==============================================================================
 bool TestProjectWithCodexAudioProcessor::hasEditor() const
 {
