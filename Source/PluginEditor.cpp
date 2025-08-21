@@ -42,7 +42,7 @@ TestProjectWithCodexAudioProcessorEditor::TestProjectWithCodexAudioProcessorEdit
     // Mode tabs
     modeTabs.addTab ("BPF12", juce::Colours::lightgrey, new juce::Component(), true);
     modeTabs.addTab ("BPF24", juce::Colours::lightgrey, new juce::Component(), true);
-    modeTabs.onCurrentTabChanged = [this] (int index, const juce::String&) { audioProcessor.setMode (index); };
+    modeTabs.onChange = [this] { audioProcessor.setMode (modeTabs.getCurrentTabIndex()); };
     addAndMakeVisible (modeTabs);
 
     // Fundamental frequency label
@@ -91,4 +91,3 @@ void TestProjectWithCodexAudioProcessorEditor::timerCallback()
     auto freq = audioProcessor.getCurrentF0();
     f0Label.setText ("F0: " + juce::String (freq, 2) + " Hz", juce::dontSendNotification);
 }
-

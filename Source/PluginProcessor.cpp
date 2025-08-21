@@ -9,6 +9,8 @@
 #include "PluginProcessor.h"
 #include "PluginEditor.h"
 #include <cmath>
+#include <vector>
+
 
 //==============================================================================
 TestProjectWithCodexAudioProcessor::TestProjectWithCodexAudioProcessor()
@@ -118,6 +120,7 @@ void TestProjectWithCodexAudioProcessor::prepareToPlay (double sampleRate, int s
 
 void TestProjectWithCodexAudioProcessor::releaseResources()
 {
+
     // When playback stops, you can use this as an opportunity to free up any
     // spare memory, etc.
 }
@@ -170,6 +173,7 @@ void TestProjectWithCodexAudioProcessor::processBlock (juce::AudioBuffer<float>&
     auto numSamples = oversampledBlock.getNumSamples();
     auto numChannels = oversampledBlock.getNumChannels();
 
+    std::vector<float*> channelPtrs (numChannels);
     for (size_t i = 0; i < numSamples; ++i)
     {
         auto cutoff = cutoffSmooth.getNextValue();
@@ -181,14 +185,39 @@ void TestProjectWithCodexAudioProcessor::processBlock (juce::AudioBuffer<float>&
         ladder.setDrive (dB);
 
         for (size_t ch = 0; ch < numChannels; ++ch)
-        {
-            auto* channelData = oversampledBlock.getChannelPointer (ch);
-            channelData[i] = ladder.processSample ((int) ch, channelData[i]);
-        }
+            channelPtrs[ch] = oversampledBlock.getChannelPointer (ch) + i;
+
+        juce::dsp::AudioBlock<float> singleSampleBlock (channelPtrs.data(), numChannels, 1);
+        juce::dsp::ProcessContextReplacing<float> context (singleSampleBlock);
+        ladder.process (context);
     }
 
     oversampler->processSamplesDown (block);
 }
+
+void TestProjectWithCodexAudioProcessor::setQ (float newQ)
+{
+    q = newQ;
+}
+
+void TestProjectWithCodexAudioProcessor::setDrive (float newDrive)
+{
+    drive = newDrive;
+}
+
+void TestProjectWithCodexAudioProcessor::setMode (int modeIndex)
+{
+    if (modeIndex == 0)
+        ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF12);
+    else
+        ladder.setMode (juce::dsp::LadderFilter<float>::Mode::BPF24);
+}
+
+float TestProjectWithCodexAudioProcessor::getCurrentF0() const
+{
+    return currentF0.load();
+}
+
 
 void TestProjectWithCodexAudioProcessor::setQ (float newQ)
 {
