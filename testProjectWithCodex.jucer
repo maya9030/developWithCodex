@@ -11,6 +11,10 @@
       <FILE id="XIGygt" name="PluginEditor.cpp" compile="1" resource="0"
             file="Source/PluginEditor.cpp"/>
       <FILE id="kIyYJP" name="PluginEditor.h" compile="0" resource="0" file="Source/PluginEditor.h"/>
+      <FILE id="ENpMTP" name="MPMtracker.cpp" compile="1" resource="0" file="Source/MPMtracker.cpp"/>
+      <FILE id="QYPHiQ" name="MPMtracker.h" compile="0" resource="0" file="Source/MPMtracker.h"/>
+      <FILE id="VZtkln" name="FrequencyAnalyzer.cpp" compile="1" resource="0" file="Source/FrequencyAnalyzer.cpp"/>
+      <FILE id="GXNLVw" name="FrequencyAnalyzer.h" compile="0" resource="0" file="Source/FrequencyAnalyzer.h"/>
     </GROUP>
   </MAINGROUP>
   <MODULES>
